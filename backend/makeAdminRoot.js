@@ -14,7 +14,7 @@ const makeAdmin = async () => {
     await mongoose.connect(process.env.MONGODB_URL);
     console.log('MongoDB Connected');
 
-    const email = 'vansh14raturi@gmail.com';
+    const email = 'bodduakshaya22@gmail.com';
     const user = await User.findOne({ email });
 
     if (!user) {

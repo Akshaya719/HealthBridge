@@ -13,7 +13,7 @@ const checkUser = async () => {
     await mongoose.connect(process.env.MONGODB_URL);
     console.log('MongoDB Connected');
 
-    const email = 'vansh14raturi@gmail.com';
+    const email = 'bodduakshaya@gmail.com';
     const user = await User.findOne({ email });
 
     if (!user) {

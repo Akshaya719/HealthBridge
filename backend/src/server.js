@@ -27,6 +27,10 @@ app.use(
   })
 );
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Authentication Config
 const passport = require("./config/passport");
 app.use(passport.initialize());

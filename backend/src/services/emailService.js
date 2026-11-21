@@ -2,15 +2,18 @@ const nodemailer=require("nodemailer")
 
 
 async function sendEmail(to,subject,html){
-    if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+    const smtpEmail = process.env.SMTP_EMAIL?.trim();
+    const smtpPassword = process.env.SMTP_PASSWORD?.replace(/\s+/g, "");
+
+    if (!smtpEmail || !smtpPassword) {
         throw new Error("SMTP_EMAIL and SMTP_PASSWORD must be configured");
     }
 
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-            user: process.env.SMTP_EMAIL,
-            pass: process.env.SMTP_PASSWORD
+            user: smtpEmail,
+            pass: smtpPassword
         },
         connectionTimeout: 10_000,
         greetingTimeout: 10_000,
@@ -18,7 +21,7 @@ async function sendEmail(to,subject,html){
     })
 
     const mailOptions={
-        from: process.env.SMTP_EMAIL,
+        from: smtpEmail,
         to,
         subject,
         html

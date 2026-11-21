@@ -1,7 +1,9 @@
+
 services:
   - type: web
     name: healthbridge-api
     runtime: node
+    plan: free
     rootDir: backend
     buildCommand: npm ci
     startCommand: npm start

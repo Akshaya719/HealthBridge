@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Button from "../../components/Button";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { API_BASE_URL } from "../../config";
@@ -16,26 +16,26 @@ function Loginpage() {
   const [role, setRole] = useState("Patient"); // ⭐ DEFAULT ROLE
 
   const navigate = useNavigate();
-  // Parse query params
-  const [searchParams] = useState(new URLSearchParams(window.location.search));
+  const [loading, setLoading] = useState(false);
+  const [fieldError, setFieldError] = useState({ email: "", password: "" });
+  const [backendError, setBackendError] = useState(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
 
-  useEffect(() => {
-    const error = searchParams.get("error");
     if (error === "blocked") {
-      setBackendError(
+      return (
         <span>
           Your account is blocked. <a href="/contact" className="underline font-bold hover:text-red-700">Contact us</a> for support.
         </span>
       );
-    } else if (error === "auth_failed") {
-      setBackendError("Google Authentication failed. Please try again.");
     }
-  }, [searchParams]);
-
-  // UI state
-  const [loading, setLoading] = useState(false);
-  const [fieldError, setFieldError] = useState({ email: "", password: "" });
-  const [backendError, setBackendError] = useState("");
+    if (error === "auth_failed") {
+      return "Google Authentication failed. Please try again.";
+    }
+    if (error === "google_not_configured") {
+      return "Google sign-in is not configured yet. Please use email and password or try again later.";
+    }
+    return "";
+  });
 
   // Basic validation
   function formValidator() {

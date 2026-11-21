@@ -26,17 +26,20 @@ if (passport.isGoogleAuthConfigured) {
   route.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
   route.get(
     "/google/callback",
-    passport.authenticate("google", { session: false, failureRedirect: "/login" }),
+    passport.authenticate("google", {
+      session: false,
+      failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:5173"}/login?error=auth_failed`,
+    }),
     googleCallback
   );
 } else {
-  route.get("/google", (req, res) => {
-    return res.status(503).json({ message: "Google login is not configured on this server" });
-  });
+  const redirectToLogin = (_req, res) => {
+    const frontendURL = process.env.FRONTEND_URL || "http://localhost:5173";
+    return res.redirect(`${frontendURL}/login?error=google_not_configured`);
+  };
 
-  route.get("/google/callback", (req, res) => {
-    return res.status(503).json({ message: "Google login is not configured on this server" });
-  });
+  route.get("/google", redirectToLogin);
+  route.get("/google/callback", redirectToLogin);
 }
 
 

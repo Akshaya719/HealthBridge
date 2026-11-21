@@ -1,7 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config";
 import Button from "../../components/Button";
+
+const OTP_REQUEST_TIMEOUT_MS = 25_000;
+
+async function requestOtp(email) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OTP_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/verifyEmail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || "Unable to send verification email.");
+    }
+  } catch (requestError) {
+    if (requestError.name === "AbortError") {
+      throw new Error("The server took too long to send the code. Please try again.");
+    }
+    throw requestError;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function VerifyEmail() {
   const [otp, setOtp] = useState("");
@@ -9,59 +36,54 @@ function VerifyEmail() {
   const [error, setError] = useState({ otp: "" });
   const [backendError, setBackendError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(true); // ⭐ loader for OTP sending
+  const [sendingOtp, setSendingOtp] = useState(true);
 
   // Read email stored after signup
   const email = localStorage.getItem("pendingEmail");
 
-  // ⭐ Prevent double sending on mount in React StrictMode
   const hasSent = React.useRef(false);
 
-  // ⭐ Send OTP as soon as page loads
   useEffect(() => {
-    if (!email || hasSent.current) return;
-    
+    if (hasSent.current) return;
+
+    if (!email) {
+      setBackendError("No email is pending verification. Please sign up again.");
+      setSendingOtp(false);
+      return;
+    }
+
     async function sendOtp() {
       hasSent.current = true;
       try {
-        await fetch(`${API_BASE_URL}/auth/verifyEmail`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-      } catch (error) {
-        console.log("Error sending OTP:", error);
+        await requestOtp(email);
+      } catch (requestError) {
+        console.error("Error sending OTP:", requestError);
+        setBackendError(requestError.message || "Unable to send verification email.");
+      } finally {
+        setSendingOtp(false);
       }
-      setSendingOtp(false); // stop loader
     }
 
     sendOtp();
   }, [email]);
 
-  // ⭐ Handle Resend OTP
   const handleResendOtp = async () => {
     if (!email) {
-      alert("No email found to resend OTP.");
+      setBackendError("No email is pending verification. Please sign up again.");
       return;
     }
+
+    setBackendError("");
     setSendingOtp(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/verifyEmail`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        alert("OTP resent successfully!");
-      } else {
-        const data = await res.json();
-        alert(data.message || "Failed to resend OTP.")
-      }
-    } catch (error) {
-      console.log("Error resending OTP:", error);
-      alert("Error resending OTP.");
+      await requestOtp(email);
+      alert("OTP resent successfully!");
+    } catch (requestError) {
+      console.error("Error resending OTP:", requestError);
+      setBackendError(requestError.message || "Unable to send verification email.");
+    } finally {
+      setSendingOtp(false);
     }
-    setSendingOtp(false);
   };
 
   // ⭐ Validate OTP before submit

@@ -2,53 +2,57 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/User");
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // Check if user exists based on googleId
-        let user = await User.findOne({ googleId: profile.id });
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL;
+const googleAuthConfigured = Boolean(googleClientId && googleClientSecret && googleCallbackUrl);
 
-        if (user) {
-          return done(null, user);
-        }
+if (googleAuthConfigured) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: googleClientId,
+        clientSecret: googleClientSecret,
+        callbackURL: googleCallbackUrl,
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          let user = await User.findOne({ googleId: profile.id });
 
-        // Check if user exists with same email (if so, link accounts or error?)
-        // For now, we'll try to link if email matches, otherwise create new
-        user = await User.findOne({ email: profile.emails[0].value });
+          if (user) {
+            return done(null, user);
+          }
 
-        if (user) {
-          // Update user to include googleId
-          user.googleId = profile.id;
-          user.authProvider = "google"; // or "both"? keeping it simple
-          if (!user.profilePicture) user.profilePicture = profile.photos[0].value;
+          user = await User.findOne({ email: profile.emails[0].value });
+
+          if (user) {
+            user.googleId = profile.id;
+            user.authProvider = "google";
+            if (!user.profilePicture) user.profilePicture = profile.photos[0].value;
+            await user.save();
+            return done(null, user);
+          }
+
+          user = new User({
+            userName: profile.displayName,
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            profilePicture: profile.photos[0].value,
+            authProvider: "google",
+            isEmailVerified: true
+          });
+
           await user.save();
-          return done(null, user);
+          done(null, user);
+        } catch (err) {
+          done(err, null);
         }
-
-        // Create new user
-        user = new User({
-          userName: profile.displayName,
-          email: profile.emails[0].value,
-          googleId: profile.id,
-          profilePicture: profile.photos[0].value,
-          authProvider: "google",
-          isEmailVerified: true // Google emails are verified
-        });
-
-        await user.save();
-        done(null, user);
-      } catch (err) {
-        done(err, null);
       }
-    }
-  )
-);
+    )
+  );
+}
+
+passport.isGoogleAuthConfigured = googleAuthConfigured;
 
 // Serialize user for session (or token generation reference)
 passport.serializeUser((user, done) => {

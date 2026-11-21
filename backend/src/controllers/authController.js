@@ -125,7 +125,8 @@ async function verifyEmail(req, res) {
         `<p>Your OTP is <b>${OTP}</b>. It is valid for 5 minutes.</p>`
       );
     } catch (e) {
-      return res.status(500).json({ message: "Unable to send email" });
+      console.error("Verification email delivery failed:", e.message);
+      return res.status(503).json({ message: "Email delivery is temporarily unavailable. Please try again later." });
     }
 
     return res.status(200).json({ message: "OTP sent to your email" });
@@ -187,7 +188,12 @@ async function forgetPassword(req, res) {
     user.emailVerificationExpires = Date.now() + 5 * 60 * 1000;
     await user.save();
 
-    await sendEmail(email, "Reset Password OTP", `<h3>Your OTP: ${OTP}</h3>`);
+    try {
+      await sendEmail(email, "Reset Password OTP", `<h3>Your OTP: ${OTP}</h3>`);
+    } catch (e) {
+      console.error("Password reset email delivery failed:", e.message);
+      return res.status(503).json({ message: "Email delivery is temporarily unavailable. Please try again later." });
+    }
 
     return res.status(200).json({ message: "OTP sent to your email" });
 

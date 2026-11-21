@@ -3,6 +3,31 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config";
 import Button from "../../components/Button";
 
+const REQUEST_TIMEOUT_MS = 25_000;
+
+async function postJson(url, body) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    return { response, data: await response.json().catch(() => ({})) };
+  } catch (requestError) {
+    if (requestError.name === "AbortError") {
+      throw new Error("The request timed out. Please try again.");
+    }
+    throw requestError;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function ForgotPassword() {
   const navigate = useNavigate();
 
@@ -31,17 +56,10 @@ function ForgotPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch(
+      const { response: res, data } = await postJson(
         `${API_BASE_URL}/auth/forgotPassword`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }
+        { email }
       );
-
-      const data = await res.json();
-      setLoading(false);
 
       if (!res.ok) {
         setError(data.message || "Failed to send OTP");
@@ -52,8 +70,9 @@ function ForgotPassword() {
       setStep(2); // ✅ move to OTP + Password UI
 
     } catch (err) {
-      console.log(err);
-      setError("Server error, try again later");
+      console.error("Forgot password OTP request failed:", err);
+      setError(err.message || "Server error, try again later");
+    } finally {
       setLoading(false);
     }
   };
@@ -72,17 +91,10 @@ function ForgotPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch(
+      const { response: res, data } = await postJson(
         `${API_BASE_URL}/auth/forgotPassword/verifyOTP`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp, newPassword }),
-        }
+        { email, otp, newPassword }
       );
-
-      const data = await res.json();
-      setLoading(false);
 
       if (!res.ok) {
         setError(data.message || "OTP verification failed");
@@ -96,8 +108,9 @@ function ForgotPassword() {
       }, 1500);
 
     } catch (err) {
-      console.log(err);
-      setError("Server error, try again later");
+      console.error("Password reset request failed:", err);
+      setError(err.message || "Server error, try again later");
+    } finally {
       setLoading(false);
     }
   };

@@ -23,9 +23,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-      - key: SMTP_EMAIL
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PASSWORD
+      - key: RESEND_FROM_EMAIL
         sync: false
       - key: RAZORPAY_KEY_ID
         sync: false

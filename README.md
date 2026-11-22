@@ -34,7 +34,7 @@ This platform enables three types of users:
 ## ✨ Features
 
 ### 🔐 Authentication & Security
-- Email/password registration with **OTP-based email verification** (via Nodemailer)
+- Email/password registration with **OTP-based email verification** (via Resend)
 - **Google OAuth 2.0** login via Passport.js
 - **JWT-based** session management
 - Forgot password flow with OTP reset
@@ -88,7 +88,7 @@ This platform enables three types of users:
 | **bcrypt** | Password hashing |
 | **Passport.js** | OAuth 2.0 middleware |
 | **passport-google-oauth20** | Google authentication strategy |
-| **Nodemailer** | Email sending (OTP, verification, notifications) |
+| **Resend** | Email sending over HTTPS (OTP, verification, notifications) |
 | **Razorpay** | Payment gateway integration (INR) |
 | **node-cron** | Scheduled background tasks |
 | **dotenv** | Environment variable management |
@@ -160,7 +160,7 @@ Telemedicine-main/
 │   │   │   ├── contactRoutes.js
 │   │   │   └── adminRoutes.js
 │   │   ├── services/
-│   │   │   └── emailService.js     # Nodemailer email service
+│   │   │   └── emailService.js     # Resend email service
 │   │   ├── utils/
 │   │   │   ├── cronJobs.js         # Auto-cancel scheduled job
 │   │   │   ├── generateOTP.js
@@ -307,16 +307,16 @@ GOOGLE_CALLBACK_URL=http://localhost:5001/api/auth/google/callback
 # Frontend URL (for CORS and redirects)
 FRONTEND_URL=http://localhost:5173
 
-# Nodemailer (SMTP)
-SMTP_EMAIL=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
+# Resend email delivery
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM_EMAIL="HealthBridge <no-reply@your-verified-domain.com>"
 
 # Razorpay
 RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 ```
 
-> **Note:** For Gmail SMTP, use an [App Password](https://support.google.com/accounts/answer/185833) instead of your account password.
+> **Note:** Verify your sending domain in Resend before sending OTPs to users. The Resend test sender is limited to the email address associated with your Resend account.
 
 ---
 
@@ -328,7 +328,7 @@ RAZORPAY_KEY_SECRET=your_razorpay_secret
 - A **MongoDB Atlas** account (free tier works)
 - A **Razorpay** account (test mode) — optional, for payments
 - A **Google Cloud Console** project with OAuth 2.0 credentials — optional, for Google login
-- A Gmail account with App Password enabled — optional, for email OTPs
+- A Resend account and verified sending domain — required for email OTPs
 
 ### 1. Clone the Repository
 
@@ -397,6 +397,7 @@ node makeAdminRoot.js
 |---------|-------------|
 | `npm run dev` | Start server with hot-reload (nodemon) |
 | `npm start` | Start server in production mode |
+| `TEST_EMAIL=you@example.com node src/services/test.js` | Send a test email through Resend |
 | `node seedDoctors.js` | Seed initial doctor records |
 | `node makeAdminRoot.js` | Promote a user to Admin role |
 | `node checkUser.js` | Debug / inspect a user record |

@@ -1,21 +1,27 @@
-require("dotenv").config({
-    path: "../../.env"
-});
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "../../.env") });
 const sendEmail = require("./emailService");
 
-console.log(process.env.SMTP_EMAIL)
-
 async function test() {
+  const testEmail = process.env.TEST_EMAIL;
+  if (!testEmail) {
+    throw new Error("Set TEST_EMAIL to an address you control before running this script");
+  }
+
   try {
     await sendEmail(
-      "213021222.shridhar@gmail.com",
-      "Testing Transporter",
-      "<h1>Your transporter works 🔥</h1>"
+      testEmail,
+      "HealthBridge email delivery test",
+      "<p>Your HealthBridge email delivery is working.</p>"
     );
-    console.log("Mail sent!");
+    console.log("Test email sent");
   } catch (err) {
-    console.log("Mail failed:", err);
+    console.error("Email test failed:", err.message);
+    process.exitCode = 1;
   }
 }
 
-test();
+test().catch((err) => {
+  console.error("Email test failed:", err.message);
+  process.exitCode = 1;
+});

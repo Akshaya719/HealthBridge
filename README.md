@@ -307,7 +307,13 @@ GOOGLE_CALLBACK_URL=http://localhost:5001/api/auth/google/callback
 # Frontend URL (for CORS and redirects)
 FRONTEND_URL=http://localhost:5173
 
-# Resend email delivery
+# Local email delivery (Render Free blocks outbound SMTP)
+EMAIL_PROVIDER=smtp
+SMTP_EMAIL=your_email@gmail.com
+SMTP_PASSWORD=your_gmail_app_password
+
+# Production email delivery through Resend over HTTPS
+EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_your_api_key
 RESEND_FROM_EMAIL="HealthBridge <no-reply@your-verified-domain.com>"
 
@@ -316,7 +322,7 @@ RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 ```
 
-> **Note:** Verify your sending domain in Resend before sending OTPs to users. The Resend test sender is limited to the email address associated with your Resend account.
+> **Note:** For local Gmail SMTP, use a Gmail [App Password](https://support.google.com/accounts/answer/185833). Render Free blocks outbound SMTP. For production, verify your sending domain in Resend; its test sender is limited to the email address associated with your Resend account.
 
 ---
 
@@ -328,7 +334,7 @@ RAZORPAY_KEY_SECRET=your_razorpay_secret
 - A **MongoDB Atlas** account (free tier works)
 - A **Razorpay** account (test mode) — optional, for payments
 - A **Google Cloud Console** project with OAuth 2.0 credentials — optional, for Google login
-- A Resend account and verified sending domain — required for email OTPs
+- A Gmail App Password for local OTP email, or a Resend account and verified sending domain for production OTP email
 
 ### 1. Clone the Repository
 

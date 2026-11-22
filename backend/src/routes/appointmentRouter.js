@@ -25,7 +25,7 @@ route.get("/my", authMiddleware, patientRoleMiddleware, viewAppointment);
 route.get("/doctor", authMiddleware, doctorRoleMiddleware, doctorViewAppointments);
 
 
-// 📌 DOCTOR — ACCEPT / REJECT APPOINTMENTS
+// 📌 DOCTOR — UPDATE APPOINTMENT STATUS
 route.patch("/status", authMiddleware, doctorRoleMiddleware, updateAppointmentStatus);
 
 

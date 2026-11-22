@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config";
 import MainLayout from "../../layouts/MainLayout";
 
@@ -53,7 +52,7 @@ function PatientProfile() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/user/updateProfile", {
+      const res = await fetch(`${API_BASE_URL}/user/updateProfile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +89,7 @@ function PatientProfile() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/user/updatePassword", {
+      const res = await fetch(`${API_BASE_URL}/user/updatePassword`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -203,7 +202,7 @@ function PatientProfile() {
 
                     <div className="pt-4 flex justify-end">
                       <button
-                        onClick={handleUpdateProfile}
+                        type="submit"
                         disabled={loading}
                         className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-lg shadow-primary/30 flex items-center gap-2"
                       >

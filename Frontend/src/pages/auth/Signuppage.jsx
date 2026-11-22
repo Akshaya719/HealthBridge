@@ -14,6 +14,7 @@ function Signuppage() {
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("Patient"); // Default role
 
   // UI states
@@ -181,13 +182,24 @@ function Signuppage() {
             {/* Password */}
             <div className="form-group">
               <label className="form-label">Password</label>
-              <input
-                className={`form-input ${fieldError.password ? "error" : ""}`}
-                type="password"
-                placeholder="Enter password"
-                onChange={(e) => setPassword(e.target.value)}
-                value={password}
-              />
+              <div className="relative w-full">
+                <input
+                  className={`form-input w-full pr-12 ${fieldError.password ? "error" : ""}`}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  onChange={(e) => setPassword(e.target.value)}
+                  value={password}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+                >
+                  {showPassword ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
+                </button>
+              </div>
               {fieldError.password && (
                 <p className="error-message">⚠️ {fieldError.password}</p>
               )}

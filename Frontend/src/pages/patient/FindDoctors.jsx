@@ -180,7 +180,7 @@ const FindDoctors = () => {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-slate-500">Consultation Fee</span>
-                                        <span className="font-medium text-green-600">₹{doc.consultationFee || 500}</span>
+                                        <span className="font-medium text-green-600">₹{doc.consultationFee ?? 0}</span>
                                     </div>
                                     
                                     <div className="grid grid-cols-2 gap-2 mt-4">

@@ -61,7 +61,14 @@ const DoctorProfile = () => {
             }
         } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update profile.' });
+            const responseData = error.response?.data;
+            const errorDetail = import.meta.env.DEV && typeof responseData?.error === 'string'
+                ? `: ${responseData.error}`
+                : '';
+            setMessage({
+                type: 'error',
+                text: `${responseData?.message || 'Failed to update profile'}${errorDetail}`,
+            });
         } finally {
             setIsSaving(false);
         }
@@ -142,6 +149,7 @@ const DoctorProfile = () => {
                                             name="qualification"
                                             value={formData.qualification}
                                             onChange={handleChange}
+                                            required
                                             placeholder="Qualification (e.g. MBBS)"
                                             className="bg-transparent border-none text-white placeholder-blue-200/50 text-sm focus:outline-none w-32 md:w-auto"
                                         />

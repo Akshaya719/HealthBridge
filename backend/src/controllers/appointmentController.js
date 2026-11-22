@@ -182,12 +182,12 @@ const { getIO } = require("../socket");
 
 
 
-  // 📌 DOCTOR — ACCEPT OR REJECT APPOINTMENT
+  // 📌 DOCTOR — UPDATE APPOINTMENT STATUS
   async function updateAppointmentStatus(req, res) {
     try {
       const { appointmentId, status, meetingRoom } = req.body;
 
-      if (!["accepted", "rejected"].includes(status)) {
+      if (!["accepted", "rejected", "completed"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
@@ -204,6 +204,17 @@ const { getIO } = require("../socket");
 
       if (!appt) {
         return res.status(404).json({ message: "Appointment not found" });
+      }
+
+      const allowedNextStatuses = {
+        pending: ["accepted", "rejected"],
+        accepted: ["completed"],
+      };
+
+      if (!allowedNextStatuses[appt.status]?.includes(status)) {
+        return res.status(409).json({
+          message: `Cannot change appointment from ${appt.status} to ${status}`,
+        });
       }
 
       appt.status = status;

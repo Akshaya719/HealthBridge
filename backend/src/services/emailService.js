@@ -1,7 +1,34 @@
+const nodemailer = require("nodemailer");
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 async function sendEmail(to, subject, html) {
+  const provider = process.env.EMAIL_PROVIDER?.trim().toLowerCase() || "resend";
+
+  if (provider === "smtp") {
+    const user = process.env.SMTP_EMAIL?.trim();
+    const pass = process.env.SMTP_PASSWORD?.replace(/\s+/g, "");
+
+    if (!user || !pass) {
+      throw new Error("SMTP_EMAIL and SMTP_PASSWORD must be configured for SMTP");
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+    });
+
+    return transporter.sendMail({ from: user, to, subject, html });
+  }
+
+  if (provider !== "resend") {
+    throw new Error(`Unsupported email provider: ${provider}`);
+  }
+
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.RESEND_FROM_EMAIL?.trim();
 

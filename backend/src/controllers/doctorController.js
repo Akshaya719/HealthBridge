@@ -26,7 +26,15 @@ const createOrUpdateDoctorProfile = async (req, res) => {
       name
     } = req.body;
 
-    if (!specialization || !qualification || experience === undefined || !consultationFee || !name) {
+    if (
+      !name?.trim() ||
+      !specialization ||
+      !qualification?.trim() ||
+      experience === undefined ||
+      experience === "" ||
+      consultationFee === undefined ||
+      consultationFee === ""
+    ) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",

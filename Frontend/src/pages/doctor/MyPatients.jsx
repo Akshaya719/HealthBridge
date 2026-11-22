@@ -9,6 +9,7 @@ const MyPatients = () => {
     // We fetch all appointments to derive the list of patients
     const { data, loading, error } = useFetchData('/appointments/doctor');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedPatient, setSelectedPatient] = useState(null);
 
     // Extract unique patients from appointments
     const appointments = data?.appointments || [];
@@ -33,6 +34,23 @@ const MyPatients = () => {
         patient.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const patientAppointments = selectedPatient
+        ? appointments
+            .filter(appt => appt.patient?._id === selectedPatient._id)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        : [];
+
+    const formatAppointmentDate = (date) => {
+        if (!date) return 'Date unavailable';
+        const parsedDate = new Date(date);
+        if (Number.isNaN(parsedDate.getTime())) return 'Date unavailable';
+        return parsedDate.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
 
     return (
         <MainLayout>
@@ -89,7 +107,10 @@ const MyPatients = () => {
                                     </div>
 
                                     <div className="w-full flex gap-2">
-                                        <button className="flex-1 py-2.5 rounded-lg border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-all text-sm">
+                                        <button
+                                            onClick={() => setSelectedPatient(patient)}
+                                            className="flex-1 py-2.5 rounded-lg border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-all text-sm"
+                                        >
                                             View History
                                         </button>
                                         <button 
@@ -120,6 +141,60 @@ const MyPatients = () => {
                     </div>
                 )}
             </div>
+            {selectedPatient && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    onClick={() => setSelectedPatient(null)}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="patient-history-title"
+                        className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+                        onClick={event => event.stopPropagation()}
+                    >
+                        <div className="mb-5 flex items-start justify-between gap-4">
+                            <div>
+                                <h2 id="patient-history-title" className="text-xl font-bold text-slate-900">
+                                    Appointment History
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-500">{selectedPatient.userName}</p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedPatient(null)}
+                                aria-label="Close appointment history"
+                                className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {patientAppointments.length ? (
+                            <div className="space-y-3">
+                                {patientAppointments.map(appt => (
+                                    <div key={appt._id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
+                                        <div>
+                                            <p className="font-semibold text-slate-800">{formatAppointmentDate(appt.date)}</p>
+                                            <p className="mt-1 text-sm text-slate-500">
+                                                {appt.timeSlot?.start || 'Time unavailable'}{appt.timeSlot?.end ? ` - ${appt.timeSlot.end}` : ''}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm font-semibold text-slate-700">
+                                                {appt.paymentInfo?.amount == null ? '—' : `₹${appt.paymentInfo.amount}`}
+                                            </span>
+                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase text-slate-600">
+                                                {appt.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="py-8 text-center text-slate-500">No appointment history found.</p>
+                        )}
+                    </div>
+                </div>
+            )}
         </MainLayout>
     );
 };

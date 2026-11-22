@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config";
 import MainLayout from "../../layouts/MainLayout";
-import DoctorAccessRequest from "../../components/patient/DoctorAccessRequest";
 
 function PatientProfile() {
   
@@ -21,36 +21,30 @@ function PatientProfile() {
   const [activeTab, setActiveTab] = useState("details");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
-  const [sessionRole] = useState(() => JSON.parse(localStorage.getItem("user") || "{}").role);
 
   useEffect(() => {
-    let active = true;
-
-    const loadProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (active && data.success) {
-          setUser({
-            userName: data.user.userName || "",
-            fullName: data.user.fullName || "",
-            email: data.user.email || "",
-            style: data.user.style || "light",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching profile", error);
-      }
-    };
-
-    loadProfile();
-    return () => {
-      active = false;
-    };
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUser({
+          userName: data.user.userName || "",
+          fullName: data.user.fullName || "",
+          email: data.user.email || "",
+          style: data.user.style || "light",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile", error);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -59,7 +53,7 @@ function PatientProfile() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/user/updateProfile`, {
+      const res = await fetch("http://localhost:3000/api/user/updateProfile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +72,6 @@ function PatientProfile() {
         setMessage({ type: "error", text: data.message || "Failed to update profile" });
       }
     } catch (error) {
-      console.error("Error updating profile", error);
       setLoading(false);
       setMessage({ type: "error", text: "Server error" });
     }
@@ -97,7 +90,7 @@ function PatientProfile() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/user/updatePassword`, {
+      const res = await fetch("http://localhost:3000/api/user/updatePassword", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +111,6 @@ function PatientProfile() {
         setMessage({ type: "error", text: data.message || "Failed to update password" });
       }
     } catch (error) {
-      console.error("Error updating password", error);
       setLoading(false);
       setMessage({ type: "error", text: "Server error" });
     }
@@ -168,7 +160,6 @@ function PatientProfile() {
           <div className="flex-1 p-8">
             
             {activeTab === "details" && (
-              <>
               <form onSubmit={handleUpdateProfile} className="space-y-8 max-w-2xl">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 mb-6 pb-2 border-b border-slate-100">Personal Information</h2>
@@ -222,8 +213,6 @@ function PatientProfile() {
                   </div>
                 </div>
               </form>
-              <DoctorAccessRequest role={sessionRole} />
-              </>
             )}
 
             {activeTab === "security" && (

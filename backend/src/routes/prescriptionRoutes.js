@@ -2,11 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const authMiddleware = require("../middlewares/authMiddleware");
-const {
-  patientRoleMiddleware,
-  verifiedDoctorRoleMiddleware,
-  verifiedDoctorOrOtherRoleMiddleware,
-} = require("../middlewares/roleMiddleware");
+const { patientRoleMiddleware, doctorRoleMiddleware } = require("../middlewares/roleMiddleware");
 
 const {
   createPrescription,
@@ -24,7 +20,7 @@ const {
 router.post(
   "/create",
   authMiddleware,
-  verifiedDoctorRoleMiddleware,
+  doctorRoleMiddleware,
   createPrescription
 );
 
@@ -46,7 +42,7 @@ router.get(
 router.get(
   "/doctor",
   authMiddleware,
-  verifiedDoctorRoleMiddleware,
+  doctorRoleMiddleware,
   getPrescriptionsForDoctor
 );
 
@@ -57,7 +53,7 @@ router.get(
 router.get(
   "/:id",
   authMiddleware,
-  verifiedDoctorOrOtherRoleMiddleware,
+  async (req, res, next) => { next(); }, // placeholder so auth runs first
   getPrescriptionById
 );
 
@@ -68,7 +64,7 @@ router.get(
 router.patch(
   "/update",
   authMiddleware,
-  verifiedDoctorRoleMiddleware,
+  doctorRoleMiddleware,
   updatePrescription
 );
 
@@ -79,7 +75,6 @@ router.patch(
 router.delete(
   "/:id",
   authMiddleware,
-  verifiedDoctorOrOtherRoleMiddleware,
   deletePrescription
 );
 

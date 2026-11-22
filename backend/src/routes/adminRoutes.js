@@ -8,13 +8,8 @@ const {
     approveDoctor,
     rejectDoctor,
     toggleUserBlock,
-    getStats,
+    getStats
 } = require("../controllers/adminController");
-const {
-    getPendingDoctorAccessRequests,
-    approveDoctorAccessRequest,
-    rejectDoctorAccessRequest,
-} = require("../controllers/doctorAccessRequestController");
 
 const authMiddleware = require("../middlewares/authMiddleware");
 const { adminRoleMiddleware } = require("../middlewares/roleMiddleware");
@@ -40,9 +35,6 @@ router.get("/users", getAllUsers);
 
 // GET ALL DOCTORS
 router.get("/doctors", getAllDoctors);
-router.get("/doctor-access-requests", getPendingDoctorAccessRequests);
-router.patch("/doctor-access-requests/:requestId/approve", approveDoctorAccessRequest);
-router.patch("/doctor-access-requests/:requestId/reject", rejectDoctorAccessRequest);
 
 // APPROVE DOCTOR
 router.post("/doctor/approve", approveDoctor);

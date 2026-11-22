@@ -65,7 +65,7 @@ async function getAllUsers(req, res) {
 async function getAllDoctors(req, res) {
   try {
     const doctors = await Doctor.find()
-      .populate("userId", "userName email role isActive")
+      .populate("userId", "userName email role")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -92,21 +92,12 @@ async function approveDoctor(req, res) {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    const doctor = await Doctor.findOne({ userId: user._id });
-    if (!doctor) {
-      return res.status(409).json({ message: "Doctor must complete a profile before approval" });
-    }
-
-    doctor.verificationStatus = "approved";
-    doctor.reviewedBy = req.user.id;
-    doctor.reviewedAt = new Date();
     user.isActive = true;
-    await doctor.save();
     await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "Doctor profile verified and activated"
+      message: "Doctor approved successfully"
     });
 
   } catch (error) {
@@ -127,19 +118,12 @@ async function rejectDoctor(req, res) {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    const doctor = await Doctor.findOne({ userId: user._id });
-    if (!doctor) {
-      return res.status(404).json({ message: "Doctor profile not found" });
-    }
-
-    doctor.verificationStatus = "rejected";
-    doctor.reviewedBy = req.user.id;
-    doctor.reviewedAt = new Date();
-    await doctor.save();
+    user.isActive = false;
+    await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "Doctor profile rejected; the account remains active"
+      message: "Doctor rejected / deactivated"
     });
 
   } catch (error) {

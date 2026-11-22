@@ -27,13 +27,7 @@ const { getIO } = require("../socket");
 
 
       // get real doctor profile (doctorId = userId)
-      const doctor = await Doctor.findOne({
-        userId: doctorId,
-        $or: [
-          { verificationStatus: "approved" },
-          { verificationStatus: { $exists: false } },
-        ],
-      });
+      const doctor = await Doctor.findOne({ userId: doctorId });
 
       if (!doctor) {
         return res.status(404).json({ message: "Doctor profile not found" });

@@ -32,6 +32,21 @@ exports.addReview = async (req, res) => {
         return res.status(400).json({ success: false, message: "Can only review accepted or completed appointments" });
     }
 
+    if (String(appointment.doctor) !== String(doctorId)) {
+      return res.status(400).json({ success: false, message: "Review doctor does not match the appointment" });
+    }
+
+    const doctor = await Doctor.findOne({
+      _id: appointment.doctor,
+      $or: [
+        { verificationStatus: "approved" },
+        { verificationStatus: { $exists: false } },
+      ],
+    });
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: "Verified doctor not found" });
+    }
+
     // 2. Add Review
     const review = await Review.create({
       doctor: doctorId,
@@ -43,16 +58,13 @@ exports.addReview = async (req, res) => {
     });
 
     // 3. Update Doctor's Aggregate Rating
-    const doctor = await Doctor.findById(doctorId);
-    if (doctor) {
-        const reviews = await Review.find({ doctor: doctorId });
-        const total = reviews.reduce((acc, item) => item.rating + acc, 0);
-        const avgRating = total / reviews.length;
-        
-        doctor.rating = Math.round(avgRating * 10) / 10; // Round to 1 decimal place
-        doctor.totalRatings = reviews.length;
-        await doctor.save();
-    }
+    const reviews = await Review.find({ doctor: doctorId });
+    const total = reviews.reduce((acc, item) => item.rating + acc, 0);
+    const avgRating = total / reviews.length;
+
+    doctor.rating = Math.round(avgRating * 10) / 10;
+    doctor.totalRatings = reviews.length;
+    await doctor.save();
 
     res.status(201).json({
       success: true,
@@ -72,6 +84,18 @@ exports.addReview = async (req, res) => {
 // @access  Public
 exports.getReviews = async (req, res) => {
   try {
+    const doctor = await Doctor.findOne({
+      _id: req.params.doctorId,
+      $or: [
+        { verificationStatus: "approved" },
+        { verificationStatus: { $exists: false } },
+      ],
+    }).select("_id");
+
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: "Verified doctor not found" });
+    }
+
     const reviews = await Review.find({ doctor: req.params.doctorId }).sort({ createdAt: -1 });
 
     res.status(200).json({

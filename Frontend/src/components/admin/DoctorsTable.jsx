@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from "../../config";
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
 const DoctorsTable = () => {
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, pending, approved
+    const [filter, setFilter] = useState('all');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchDoctors();
     }, []);
 
     const fetchDoctors = async () => {
+        setError('');
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(`${API_BASE_URL}/admin/doctors`, {
@@ -23,36 +25,33 @@ const DoctorsTable = () => {
             }
         } catch (error) {
             console.error("Error fetching doctors:", error);
+            setError(error.response?.data?.message || "Unable to load doctor profiles");
         } finally {
             setLoading(false);
         }
     };
 
     const handleStatusChange = async (userId, action) => {
-        const endpoint = action === 'approve' ? '/approve-doctor' : '/reject-doctor';
         if (!window.confirm(`Are you sure you want to ${action} this doctor?`)) return;
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_BASE_URL}/admin${endpoint}`, 
+            await axios.post(`${API_BASE_URL}/admin/doctor/${action}`,
                 { userId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            fetchDoctors(); // Refresh list
+            await fetchDoctors();
         } catch (error) {
             console.error(`Error ${action} doctor:`, error);
-            alert("Failed to update doctor status");
+            setError(error.response?.data?.message || `Unable to ${action} doctor`);
         }
     };
 
     const filteredDoctors = doctors.filter(doc => {
-        // Pending logic: userId.isActive is false AND role is Doctor
-        // Approved logic: userId.isActive is true
-        // Note: The API populates userId.
-        const isActive = doc.userId?.isActive;
-        
-        if (filter === 'pending') return !isActive; 
-        if (filter === 'approved') return isActive;
+        const status = doc.verificationStatus || 'approved';
+        if (filter === 'pending') return status === 'pending';
+        if (filter === 'approved') return status === 'approved';
+        if (filter === 'rejected') return status === 'rejected';
         return true;
     });
 
@@ -64,7 +63,7 @@ const DoctorsTable = () => {
                 <h3 className="text-lg font-semibold text-slate-800">Doctors Registry</h3>
                 
                 <div className="flex bg-slate-100 p-1 rounded-lg">
-                    {['all', 'pending', 'approved'].map((f) => (
+                    {['all', 'pending', 'approved', 'rejected'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
@@ -80,6 +79,8 @@ const DoctorsTable = () => {
                 </div>
             </div>
 
+            {error && <p className="mx-6 mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
+
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
@@ -94,6 +95,7 @@ const DoctorsTable = () => {
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {filteredDoctors.map((doc) => {
                              const user = doc.userId || {};
+                             const status = doc.verificationStatus || 'approved';
                              return (
                                 <tr key={doc._id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4">
@@ -110,20 +112,24 @@ const DoctorsTable = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
-                                            {user.isActive ? (
+                                            {status === 'approved' ? (
                                                 <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium border border-green-100">
                                                     <CheckCircle size={12} /> Approved
                                                 </span>
-                                            ) : (
+                                            ) : status === 'pending' ? (
                                                 <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full text-xs font-medium border border-amber-100">
                                                     <Clock size={12} /> Pending
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-full text-xs font-medium border border-red-100">
+                                                    <XCircle size={12} /> Rejected
                                                 </span>
                                             )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex gap-2">
-                                            {!user.isActive && (
+                                            {status !== 'approved' && (
                                                 <button 
                                                     onClick={() => handleStatusChange(user._id, 'approve')}
                                                     className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors shadow-sm shadow-green-200"
@@ -135,7 +141,7 @@ const DoctorsTable = () => {
                                                 onClick={() => handleStatusChange(user._id, 'reject')}
                                                 className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
                                             >
-                                                {user.isActive ? 'Block' : 'Reject'}
+                                                {status === 'approved' ? 'Revoke' : 'Reject'}
                                             </button>
                                         </div>
                                     </td>

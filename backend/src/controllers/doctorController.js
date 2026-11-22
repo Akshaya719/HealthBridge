@@ -2,6 +2,13 @@ const Doctor = require("../models/Doctor");
 const User = require("../models/User");
 const Appointment = require("../models/Appointment");
 
+const approvedDoctorStatusFilter = () => ({
+  $or: [
+    { verificationStatus: "approved" },
+    { verificationStatus: { $exists: false } },
+  ],
+});
+
 
 const createOrUpdateDoctorProfile = async (req, res) => {
   try {
@@ -26,7 +33,14 @@ const createOrUpdateDoctorProfile = async (req, res) => {
       name
     } = req.body;
 
-    if (!specialization || !qualification || experience === undefined || !consultationFee || !name) {
+    if (
+      !specialization ||
+      !qualification ||
+      experience === undefined ||
+      consultationFee === undefined ||
+      consultationFee === null ||
+      !name
+    ) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -36,6 +50,11 @@ const createOrUpdateDoctorProfile = async (req, res) => {
     let doctor = await Doctor.findOne({ userId });
 
     if (doctor) {
+      const professionalDetailsChanged =
+        doctor.specialization !== specialization ||
+        doctor.qualification !== qualification ||
+        doctor.experience !== Number(experience);
+
       // Update existing profile
       doctor.name = name;
       doctor.specialization = specialization;
@@ -44,6 +63,11 @@ const createOrUpdateDoctorProfile = async (req, res) => {
       doctor.consultationFee = consultationFee;
       if (availableTimes) doctor.availableTimes = availableTimes;
       doctor.bio = bio || "";
+      if (professionalDetailsChanged || doctor.verificationStatus === "rejected") {
+        doctor.verificationStatus = "pending";
+        doctor.reviewedBy = null;
+        doctor.reviewedAt = null;
+      }
 
       await doctor.save();
 
@@ -64,6 +88,7 @@ const createOrUpdateDoctorProfile = async (req, res) => {
       consultationFee,
       availableTimes: availableTimes || [],
       bio: bio || "",
+      verificationStatus: "pending",
     });
 
     return res.status(201).json({
@@ -164,7 +189,9 @@ const getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const doctor = await Doctor.findById(id).populate(
+    const doctor = await Doctor.findOne({
+      $and: [{ _id: id }, approvedDoctorStatusFilter()],
+    }).populate(
       "userId",
       "userName email"
     );
@@ -197,7 +224,9 @@ const getDoctorPublicProfile = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const doctor = await Doctor.findOne({ userId }).populate(
+    const doctor = await Doctor.findOne({
+      $and: [{ userId }, approvedDoctorStatusFilter()],
+    }).populate(
       "userId",
       "userName email"
     );
@@ -235,7 +264,9 @@ const getAllDoctors = async (req, res) => {
     if (minRating) filter.rating = { $gte: Number(minRating) };
     if (maxPrice) filter.consultationFee = { $lte: Number(maxPrice) };
 
-    const doctors = await Doctor.find(filter)
+    const doctors = await Doctor.find({
+      $and: [filter, approvedDoctorStatusFilter()],
+    })
       .populate("userId", "userName email")
       .sort({ rating: -1 });
 
@@ -266,6 +297,7 @@ const checkProfileStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       isProfileCompleted: !!doctor,
+      verificationStatus: doctor?.verificationStatus || null,
       data: doctor || null,
     });
 
@@ -283,7 +315,12 @@ const checkProfileStatus = async (req, res) => {
 // Get doctor's payment history
 const getDoctorPayments = async (req, res) => {
     try {
-        const doctor = await Doctor.findOne({ userId: req.user.id });
+        const doctor = await Doctor.findOne({
+            $and: [
+              { userId: req.user.id },
+              approvedDoctorStatusFilter(),
+            ],
+        });
         if (!doctor) {
             return res.status(404).json({ message: 'Doctor not found' });
         }

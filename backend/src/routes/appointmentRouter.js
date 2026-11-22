@@ -10,7 +10,10 @@ const {
 } = require("../controllers/appointmentController");
 
 const authMiddleware = require("../middlewares/authMiddleware");
-const { patientRoleMiddleware, doctorRoleMiddleware } = require("../middlewares/roleMiddleware");
+const {
+  patientRoleMiddleware,
+  verifiedDoctorRoleMiddleware,
+} = require("../middlewares/roleMiddleware");
 
 
 // 📌 PATIENT — BOOK APPOINTMENT
@@ -22,11 +25,11 @@ route.get("/my", authMiddleware, patientRoleMiddleware, viewAppointment);
 
 
 // 📌 DOCTOR — VIEW THEIR APPOINTMENTS
-route.get("/doctor", authMiddleware, doctorRoleMiddleware, doctorViewAppointments);
+route.get("/doctor", authMiddleware, verifiedDoctorRoleMiddleware, doctorViewAppointments);
 
 
 // 📌 DOCTOR — ACCEPT / REJECT APPOINTMENTS
-route.patch("/status", authMiddleware, doctorRoleMiddleware, updateAppointmentStatus);
+route.patch("/status", authMiddleware, verifiedDoctorRoleMiddleware, updateAppointmentStatus);
 
 
 // 📌 PATIENT — CANCEL APPOINTMENT

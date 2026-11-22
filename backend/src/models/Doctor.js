@@ -89,6 +89,20 @@ const doctorSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  verificationStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "approved",
+  },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+    default: null,
+  },
+  reviewedAt: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

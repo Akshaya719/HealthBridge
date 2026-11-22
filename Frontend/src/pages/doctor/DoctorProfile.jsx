@@ -4,11 +4,9 @@ import Card from '../../components/ui/Card';
 import Avatar from '../../components/ui/Avatar';
 import api from '../../utils/api';
 import useFetchData from '../../hooks/useFetchData';
-import { useNavigate } from 'react-router-dom';
 
 const DoctorProfile = () => {
-    const navigate = useNavigate();
-    const { data: profile, loading: fetching } = useFetchData('/doctor/profile');
+    const { data: profile, refetch } = useFetchData('/doctor/profile');
     
     // Form State
     const [formData, setFormData] = useState({
@@ -53,12 +51,12 @@ const DoctorProfile = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/doctor/profile', formData);
-            setMessage({ type: 'success', text: 'Profile updated successfully!' });
-            
-            if (!profile?.data) {
-                 setTimeout(() => navigate('/doctor/dashboard'), 1500);
-            }
+            const response = await api.post('/doctor/profile', formData);
+            await refetch();
+            const message = response.data.data.verificationStatus === 'pending'
+                ? 'Profile saved. Admin verification is required before Doctor features are enabled.'
+                : 'Profile updated successfully!';
+            setMessage({ type: 'success', text: message });
         } catch (error) {
             console.error(error);
             setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update profile.' });
@@ -83,6 +81,16 @@ const DoctorProfile = () => {
             )}
 
             <div className="max-w-5xl mx-auto pb-10 animate-slide-up">
+                {profile?.data?.verificationStatus === 'pending' && (
+                    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800" role="status">
+                        Your profile is awaiting Admin verification. You can update your profile while it is under review.
+                    </div>
+                )}
+                {profile?.data?.verificationStatus === 'rejected' && (
+                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="status">
+                        Your profile was not approved. Update your professional details and save again to request another review.
+                    </div>
+                )}
                 <form onSubmit={handleSubmit}>
                     
                     {/* Header Card (Matching Public Profile) */}

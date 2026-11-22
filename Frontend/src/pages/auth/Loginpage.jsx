@@ -100,18 +100,27 @@ function Loginpage() {
         return;
       }
 
-      // ⭐ SAVE TOKEN & USER
+      let destination;
+      if (data.user.role === 'Admin') {
+        destination = "/admin/dashboard";
+      } else if (role === "Patient") {
+        destination = "/patient/dashboard";
+      } else if (role === "Doctor") {
+        const statusResponse = await fetch(`${API_BASE_URL}/doctor/profile/status`, {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
+        const statusData = await statusResponse.json();
+        if (!statusResponse.ok) {
+          throw new Error(statusData.message || "Unable to check Doctor profile status");
+        }
+        destination = statusData.isProfileCompleted && statusData.verificationStatus === "approved"
+          ? "/doctor/dashboard"
+          : "/doctor/profile";
+      }
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // ⭐ REDIRECT based on role
-      if (data.user.role === 'Admin') {
-        navigate("/admin/dashboard");
-      } else if (role === "Patient") {
-        navigate("/patient/dashboard");
-      } else if (role === "Doctor") {
-        navigate("/doctor/dashboard");
-      }
+      navigate(destination);
     } catch (error) {
       console.log("Login error:", error);
       setBackendError("Server error. Please try again later.");
